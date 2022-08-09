@@ -27,4 +27,4 @@ As mentioned above, the dataset is from Phuket International Airport, which repo
 There is a lot of info in this dataset, but we will use mostly 12 columns of Weather codes (and labels). Each column represents 2 hours of weather condition observation.
 
 ## Process
-Process flow described in the main.py. Have a look!
+Process flow described in the main.py and in a jupyter notebook. Have a look!
