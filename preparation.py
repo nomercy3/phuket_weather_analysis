@@ -1,48 +1,11 @@
 import pandas as pd
-from lists import *
-
-'''
-1. Columns Hided:
-- Call Sign
-- Time Zone (ID)
-- Temperature Sampled Low (°C)
-- Temperature Sampled High (°C)
-- Dew Point Sampled Low (°C)
-- Dew Point Sampled High (°C) 
-- Wind Speed Min (kph)
-- Wind Speed Max (kph)
-- Gust Speed Max (kph)
-- Visibility Min (km)
-- Visibility Max (km)
-- Precipitation (mm)
-- Snow Depth Max (mm)
-- Pressure Altimeter Min (mbar)
-- Pressure Altimeter Max (mbar)
-- Min Cloud Layer Code (String)
-- Min Cloud Layer Label (String)
-- Max Cloud Layer Code (String)
-- Max Cloud Layer Label (String)
-'''
-
-'''
-2. Duplicates dropped
-'''
-
-'''
-3. Convert Date (String) to datetime, create year and month columns for further calculations, drop 2022
-'''
-
-'''
-4. Count reports to make sure it is equal to the number of days in months. 
-'''
 
 
 def prepare_data(data):
 
-    # 1. Columns hided, dataframe selected
+    # 1. Columns hided, dataframe selected, duplicates dropped
     df = pd.DataFrame(data, columns=[
         'Date (String)',
-        'Wind Direction Dominant (degrees)',
         'Weather Code 1 (String)',
         'Weather Label 1 (String)',
         'Weather Code 2 (String)',
@@ -63,25 +26,44 @@ def prepare_data(data):
         'Weather Label 9 (String)',
         'Weather Code 10 (String)',
         'Weather Label 10 (String)',
-        'Weather Condition Score'
+        'Weather Code 11 (String)',
+        'Weather Label 11 (String)',
+        'Weather Code 12 (String)',
+        'Weather Label 12 (String)'
     ])
 
-    # 2 Duplicates dropped
     df.drop_duplicates()
 
-    # 3. Converting variables
+    # 2. Null columns dropped
+    df.drop(
+        columns=[
+            'Weather Code 11 (String)',
+            'Weather Label 11 (String)',
+            'Weather Code 12 (String)',
+            'Weather Label 12 (String)'
+        ],
+        axis=1,
+        inplace=True
+    )
+
+    # 3. Columns' types checked
+    # 'Date (String)' with type string was converted to datetime.2 new columns were created
+    # to help us aggregate our data later:
+    #     - Date Year
+    #     - Date Month
     df['Date (String)'] = pd.to_datetime(df['Date (String)'])
     df['Date Year'] = pd.DatetimeIndex(df['Date (String)']).year
     df['Date Month'] = pd.DatetimeIndex(df['Date (String)']).month
-    prepared_df = df[~df['Date Year'].isin([2022])]
 
-    # 4. Check for records in months
-    group_by_month_and_year = df.groupby(['Date Year', 'Date Month'])['Date (String)'].count()
+    # 4 Data completeness checked
+    # Since we are dealing with time-sensitive data, we should check if the last year contains data for the whole year.
+    # 2022 year is not complete, so we should drop it out of our dataframe.
+    prepared_df = df[~df['Date Year'].isin([2022])]
 
     return prepared_df
 
 
-def make_weather_code_df(dataframe):
+def make_weather_code_df():
 
     weather_codes_values = {
         'Weather Code': [
@@ -103,7 +85,7 @@ def make_weather_code_df(dataframe):
             'recent unknown weather', 'well-developed dust/sand whirls', 'recent drizzle', 'funnel cloud',
             'recent funnel cloud'
         ],
-        'Scores': [
+        'Value': [
             3, 4, 4, 1, 2, 2, 2, 9, 8, 1, 7,
             5, 1, 2, 6, 4, 5, 4, 3, 3, 3,
             1, 2, 8, 5, 4, 3, 4, 3, 2,
@@ -111,41 +93,5 @@ def make_weather_code_df(dataframe):
             2
         ]
     }
-    weather_codes_scores_df = pd.DataFrame(weather_codes_values)
-    return weather_codes_scores_df
-
-
-
-def calculate_score(dataframe: pd.DataFrame, row, values_to_match: pd.DataFrame):
-    score = 0
-
-    weather_codes_list = pd.concat([
-        dataframe['Weather Code 1 (String)'],
-        dataframe['Weather Code 2 (String)'],
-        dataframe['Weather Code 3 (String)'],
-        dataframe['Weather Code 4 (String)'],
-        dataframe['Weather Code 5 (String)'],
-        dataframe['Weather Code 6 (String)'],
-        dataframe['Weather Code 7 (String)'],
-        dataframe['Weather Code 8 (String)'],
-        dataframe['Weather Code 9 (String)'],
-        dataframe['Weather Code 10 (String)']
-    ]).unique().tolist()
-
-    for index, item in enumerate(weather_code_columns):
-        if row[item] in weather_codes_list and pd.isna(row[item]) is False:
-            score += values_to_match.loc[values_to_match['Weather Code'] == row[item], 'Scores'].iat[0]
-    return score
-
-
-'''
-Scores were aggregated by each month and year — this gives us the summary of all scores by month
-'''
-
-
-def grouped_score_by_month(dataframe: pd.DataFrame):
-    return dataframe.groupby(['Date Year', 'Date Month'])['Weather Condition Score'].sum()
-
-
-def max_score_value_by_month(dataframe: pd.DataFrame):
-    return dataframe.groupby(['Date Year', 'Date Month'])['Weather Condition Score'].max().reset_index()
+    weather_codes_df = pd.DataFrame(weather_codes_values)
+    return weather_codes_df
