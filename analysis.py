@@ -1,19 +1,22 @@
 import pandas as pd
-from cleaning import preparation
 
 
-def precipitation_score_month(dataframe: pd.DataFrame):
-  return dataframe.groupby(["Date Month"])["Score For Month"].sum().reset_index(name="Precipitation Score")
+# Calculate most rainy day values and dates for each month
+def calc_most_rainy_day(raw_df, grouped_df):
+  df: pd.DataFrame = grouped_df.groupby(['Date Month'])['Max In Month'].max().reset_index(name='Most Rainy Day Value')
 
+  dates = list()
 
-def mean_score_month(dataframe: pd.DataFrame):
-  return dataframe.groupby(["Date Month"])["Score For Month"].mean().reset_index()
+  for month, value in zip(
+      df['Date Month'].values,
+      df['Most Rainy Day Value'].values
+  ):
+    dates.append(raw_df.loc[
+                   (raw_df['Weather Condition Score'] == value) &
+                   (raw_df['Date Month'] == month),
+                   'Date (String)'
+                 ].head(1).item())
 
+  df['Most Rainy Day Date'] = dates
 
-def calc_most_rainy_day(dataframe: pd.DataFrame, aggregated: pd.DataFrame):
-  max_values: pd.DataFrame = aggregated.groupby(["Date Month"])["Max In Month"].max().reset_index(name="Most Rainy Day (Value)")
-  # max_values.rename(columns={"Max In Month": "Most Rainy Day (Value)"}, inplace=True)
-
-  # print(max_values_dates)
-
-  # print(max_values)
+  return df
